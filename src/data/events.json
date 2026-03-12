@@ -1,0 +1,61 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "name": "Festival international de Carthage",
+      "description": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page",
+      "img": "event1.jpg",
+      "price": 30,
+      "nbTickets": 10,
+      "nbParticipants": 10,
+      "like": false
+    },
+    {
+      "id": 2,
+      "name": "Festival de la médina de Tunis",
+      "description": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page",
+      "img": "event2.jpg",
+      "price": 15,
+      "nbTickets": 4,
+      "nbParticipants": 30,
+      "like": false
+    },
+    {
+      "id": 3,
+      "name": "Journées cinématographiques de Carthage (JCC)",
+      "description": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page",
+      "img": "event3.jpg",
+      "price": 7,
+      "nbTickets": 20,
+      "nbParticipants": 35,
+      "like": false
+    }
+  ],
+
+  "properties": [
+    {
+      "id": 1,
+      "title": "Maison de campagne",
+      "address": "456 Chemin des Fleurs",
+      "price": 250,
+      "views": 0,
+      "image": "property1.jpg"
+    },
+    {
+      "id": 2,
+      "title": "Studio en centre-ville",
+      "address": "789 Avenue du Centre",
+      "price": 800,
+      "views": 0,
+      "image": "property2.jpg"
+    },
+    {
+      "id": 3,
+      "title": "Appartement avec vue sur mer",
+      "address": "12 Rue de la Plage",
+      "price": 1200,
+      "views": 0,
+      "image": "property3.jpg"
+    }
+  ]
+}

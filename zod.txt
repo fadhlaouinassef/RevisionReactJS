@@ -1,0 +1,255 @@
+================================================================================
+                          ZOD - SCHEMA VALIDATION
+================================================================================
+
+ZOD est une librairie TypeScript-first pour la validation de schémas.
+Elle permet de définir et valider les données de manière déclarative.
+
+================================================================================
+                    OPTIONS/MÉTHODES PRINCIPALES DE ZOD
+================================================================================
+
+1. TYPES DE BASE
+================================================================================
+
+z.string()              - Valide une chaîne de caractères
+z.number()              - Valide un nombre
+z.boolean()             - Valide un booléen
+z.date()                - Valide une date
+z.enum(['option1', 'option2'])  - Valide une énumération
+
+2. VALIDATIONS DE STRING
+================================================================================
+
+z.string()
+  .min(3)               - Longueur minimale
+  .max(50)              - Longueur maximale
+  .email()              - Doit être un email valide
+  .url()                - Doit être une URL valide
+  .regex(/^[A-Z]/)      - Doit correspondre à un regex
+  .startsWith('http')   - Doit commencer par
+  .endsWith('.com')     - Doit se terminer par
+  .toLowerCase()        - Convertit en minuscules
+  .toUpperCase()        - Convertit en majuscules
+  .trim()               - Supprime les espacements
+  .optional()           - Rend le champ optionnel
+  .nullable()           - Accepte null comme valeur
+
+Exemple:
+const schema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(8, "Minimum 8 caractères"),
+  username: z.string().min(3).max(30)
+});
+
+3. VALIDATIONS DE NUMBER
+================================================================================
+
+z.number()
+  .int()                - Doit être un entier
+  .positive()           - Doit être positif (> 0)
+  .nonnegative()        - Doit être positif ou zéro (>= 0)
+  .negative()           - Doit être négatif
+  .finite()             - Doit être un nombre fini
+  .min(10)              - Valeur minimale
+  .max(100)             - Valeur maximale
+  .multipleOf(5)        - Doit être un multiple de 5
+
+Exemple:
+const schema = z.object({
+  age: z.number().int().min(18).max(120),
+  price: z.number().positive()
+});
+
+4. VALIDATIONS DE DATE
+================================================================================
+
+z.date()
+  .min(new Date('2024-01-01'))     - Date minimale
+  .max(new Date('2025-12-31'))     - Date maximale
+
+Exemple:
+const schema = z.object({
+  birthDate: z.date().max(new Date(), "La date ne peut pas être future"),
+});
+
+5. COMBINER DES CHAMPS - Z.OBJECT()
+================================================================================
+
+z.object({
+  field1: z.string(),
+  field2: z.number(),
+  field3: z.boolean().optional(),
+  nested: z.object({
+    subfield: z.string()
+  })
+})
+
+6. TABLEAUX - Z.ARRAY()
+================================================================================
+
+z.array(z.string())              - Tableau de strings
+z.array(z.object({...}))         - Tableau d'objets
+z.string().array()               - Équivalent à z.array(z.string())
+
+Avec validations:
+z.array(z.string())
+  .min(1)                         - Au minimum 1 élément
+  .max(5)                         - Au maximum 5 éléments
+  .nonempty()                     - Le tableau ne doit pas être vide
+
+================================================================================
+                    REFINE - VALIDATION PERSONNALISÉE
+================================================================================
+
+refine() permet d'ajouter une logique de validation PERSONNALISÉE au-delà
+des validations standards.
+
+SYNTAXE:
+z.object({...}).refine(
+  (data) => {                     // Fonction qui reçoit les données
+    // Retourner true si valide, false si invalide
+    return condition;
+  },
+  {
+    message: "Message d'erreur",  // Message personnalisé
+    path: ["fieldName"]           // (Optionnel) Quel champ affiche l'erreur
+  }
+)
+
+EXEMPLE 1 - Validation simple:
+================================================================================
+const schema = z.object({
+  password: z.string().min(8),
+  confirmPassword: z.string()
+}).refine(
+  (data) => data.password === data.confirmPassword,
+  {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"]     // L'erreur s'affiche sur confirmPassword
+  }
+);
+
+EXEMPLE 2 - Validation avec conditions multiples:
+================================================================================
+const schema = z.object({
+  email: z.string().email(),
+  phone: z.string().optional(),
+  useEmail: z.boolean()
+}).refine(
+  (data) => {
+    if (data.useEmail) {
+      return !!data.email;        // Si useEmail, email est obligatoire
+    }
+    return !!data.phone;          // Sinon, phone est obligatoire
+  },
+  {
+    message: "Remplissez soit l'email soit le téléphone",
+    path: ["phone"]
+  }
+);
+
+EXEMPLE 3 - Validation avec API (async):
+================================================================================
+const schema = z.object({
+  username: z.string()
+}).refine(
+  async (data) => {
+    const exists = await checkUsernameExists(data.username);
+    return !exists;               // true si le username est disponible
+  },
+  {
+    message: "Le nom d'utilisateur est déjà pris",
+    path: ["username"]
+  }
+);
+
+================================================================================
+                    COMMENT UTILISER DANS LA DIV
+================================================================================
+
+1. LORS DE LA SOUMISSION DU FORMULAIRE:
+================================================================================
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  try {
+    const validated = schema.parse(formData);
+    console.log("Données valides:", validated);
+    // Soumettre au serveur
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errors = error.flatten();
+      console.log("Erreurs:", errors.fieldErrors);
+      // Afficher les erreurs dans le formulaire
+    }
+  }
+};
+
+2. AFFICHER LES ERREURS:
+================================================================================
+<div>
+  <input name="email" value={formData.email} />
+  {errors.email && <span className="error">{errors.email[0]}</span>}
+</div>
+
+3. AVEC REACT-HOOK-FORM + ZOD (Recommandé):
+================================================================================
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: zodResolver(schema)
+});
+
+return (
+  <form onSubmit={handleSubmit(onSubmit)}>
+    <input {...register("email")} />
+    {errors.email && <span>{errors.email?.message}</span>}
+  </form>
+);
+
+================================================================================
+                    EXEMPLE COMPLET DE SCHÉMA ZOD
+================================================================================
+
+import { z } from "zod";
+
+const reservationSchema = z.object({
+  name: z.string()
+    .min(2, "Le nom doit avoir au moins 2 caractères")
+    .max(50, "Le nom ne doit pas dépasser 50 caractères"),
+  
+  email: z.string()
+    .email("Email invalide"),
+  
+  phone: z.string()
+    .regex(/^\d{10}$/, "Le téléphone doit avoir 10 chiffres"),
+  
+  date: z.string()
+    .refine((date) => new Date(date) > new Date(), {
+      message: "La date doit être dans le futur"
+    }),
+  
+  guests: z.number()
+    .int("Doit être un nombre entier")
+    .min(1, "Au minimum 1 personne")
+    .max(10, "Au maximum 10 personnes"),
+  
+  specialRequests: z.string().optional(),
+  
+  agreeTerms: z.boolean()
+    .refine((val) => val === true, {
+      message: "Vous devez accepter les conditions"
+    })
+}).refine(
+  (data) => data.guests <= 5 || data.specialRequests?.length > 10,
+  {
+    message: "Pour plus de 5 personnes, vous devez ajouter des détails",
+    path: ["specialRequests"]
+  }
+);
+
+export default reservationSchema;
+
+================================================================================

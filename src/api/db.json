@@ -1,0 +1,167 @@
+{
+  "events": [
+    {
+      "id": "1",
+      "name": "Festival international de Carthage",
+      "description": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page",
+      "img": "event1.jpg",
+      "price": 30,
+      "nbTickets": 10,
+      "nbParticipants": 10,
+      "like": false
+    },
+    {
+      "id": "2",
+      "name": "Festival de la médina de Tunis",
+      "description": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page",
+      "img": "event2.jpg",
+      "price": 15,
+      "nbTickets": 4,
+      "nbParticipants": 30,
+      "like": false
+    },
+    {
+      "id": "3",
+      "name": "Journées cinématographiques de Carthage (JCC)",
+      "description": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page",
+      "img": "event3.jpg",
+      "price": 7,
+      "nbTickets": 20,
+      "nbParticipants": 35,
+      "like": false
+    }
+  ],
+  "properties": [
+    {
+      "id": "1",
+      "title": "Studio en centre-ville",
+      "address": "789 Avenue du Centre",
+      "price": 800,
+      "views": 560,
+      "image": "event1.jpg",
+      "available": true
+    },
+    {
+      "id": "2",
+      "title": "Studio en centre-ville",
+      "address": "789 Avenue du Centre",
+      "price": 800,
+      "views": 0,
+      "image": "event1.jpg",
+      "available": true
+    },
+    {
+      "id": "3",
+      "title": "Appartement avec vue sur mer",
+      "address": "12 Rue de la Plage",
+      "price": 1200,
+      "views": 0,
+      "image": "event1.jpg",
+      "available": false
+    },
+    {
+      "id": "cda3",
+      "title": "nassef",
+      "address": "test",
+      "price": 12
+    }
+  ],
+  "quizzes": [
+    {
+      "id": "1",
+      "title": "Quiz sur React",
+      "description": "Testez vos connaissances sur React",
+      "questions": [
+        {
+          "question": "Qu'est-ce que React ?",
+          "answer": "Une bibliothèque JavaScript pour construire des interfaces utilisateur"
+        },
+        {
+          "question": "Qu'est-ce qu'un composant React ?",
+          "answer": "Un bloc de construction réutilisable de l'interface"
+        },
+        {
+          "question": "À quoi sert le hook useState ?",
+          "answer": "À gérer un état local dans un composant fonctionnel"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Quiz sur JavaScript",
+      "description": "Les bases de JavaScript",
+      "questions": [
+        {
+          "question": "Qu'est-ce qu'une closure ?",
+          "answer": "Une fonction qui accède aux variables de son scope parent"
+        },
+        {
+          "question": "Quelle est la différence entre let et var ?",
+          "answer": "let est limité au bloc, var est limité à la fonction"
+        }
+      ]
+    },
+    {
+      "id": "6532",
+      "title": "iofjsiof",
+      "description": "fkjldsvcjdsij",
+      "questions": [
+        {
+          "question": "fsnfds",
+          "answer": "test"
+        }
+      ]
+    }
+  ],
+  "reservations": [
+    {
+      "id": "1",
+      "propertyId": 1,
+      "locataireId": 1,
+      "debut": "2023-02-10",
+      "fin": "2023-02-20"
+    },
+    {
+      "id": "2",
+      "propertyId": 1,
+      "locataireId": 2,
+      "debut": "2023-03-13",
+      "fin": "2023-03-23"
+    },
+    {
+      "id": "ea13",
+      "propertyId": 1,
+      "locataireId": 1,
+      "debut": "2026-03-13",
+      "fin": "2026-03-22"
+    },
+    {
+      "id": "e320",
+      "propertyId": 1,
+      "locataireId": 1,
+      "debut": "2026-03-10",
+      "fin": "2026-03-15"
+    },
+    {
+      "id": "94c9",
+      "propertyId": 1,
+      "locataireId": 1,
+      "debut": "2026-03-03",
+      "fin": "2026-03-28"
+    },
+    {
+      "id": "ca79",
+      "propertyId": 3,
+      "locataireId": 1,
+      "debut": "2026-03-21",
+      "fin": "2026-03-29"
+    },
+    {
+      "id": "402b",
+      "propertyId": 3,
+      "locataireId": 1,
+      "debut": "2026-03-24",
+      "fin": "2026-03-29"
+    }
+  ]
+}

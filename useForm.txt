@@ -1,0 +1,374 @@
+================================================================================
+                    REACT-HOOK-FORM - useForm GUIDE
+================================================================================
+
+REACT-HOOK-FORM est un hook qui gère l'état et la validation des formulaires.
+C'est beaucoup plus performant que les formulaires contrôlés classiques.
+
+================================================================================
+                      INSTALLATION REQUISE
+================================================================================
+
+npm install react-hook-form
+npm install @hookform/resolvers        // Pour intégrer Zod
+npm install zod
+
+================================================================================
+                    1. COMMENT APPELER LE HOOK useForm
+================================================================================
+
+SYNTAXE DE BASE:
+================================================================================
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import schema from "./validationSchema";  // Votre schéma Zod
+
+export default function MonFormulaire() {
+  const {
+    register,              // Fonction pour enregistrer les champs
+    handleSubmit,          // Fonction pour gérer la soumission
+    watch,                 // Pour observer les valeurs en temps réel
+    formState: { 
+      errors              // Objet contenant les erreurs
+    }
+  } = useForm({
+    resolver: zodResolver(schema),  // Intègre la validation Zod
+    mode: "onChange"                // Valide au changement (pas requis)
+  });
+
+  return (
+    // Votre formulaire
+  );
+}
+
+OPTIONS DE BASE DU useForm:
+================================================================================
+
+const { ... } = useForm({
+  resolver: zodResolver(schema),    // Utilisez votre schéma Zod
+  mode: "onChange",                 // "onChange", "onBlur", "onSubmit"
+                                    // Détermine quand valider
+  defaultValues: {                  // Valeurs par défaut des champs
+    email: "",
+    name: "",
+    age: 0
+  },
+  disabled: false,                  // Désactiver le formulaire entier
+  reValidateMode: "onChange"        // Quand re-valider après erreur
+});
+
+================================================================================
+                    2. DESTRUCTURATION - LES PROPRIÉTÉS PRINCIPALES
+================================================================================
+
+REGISTER - Enregistrer un champ:
+================================================================================
+register("nomDuChamp")
+  // Retourne: { name, onBlur, onChange, ref }
+  // À utiliser avec l'opérateur spread sur l'input
+
+EXEMPLE:
+<input {...register("email")} />
+
+handleSubmit - Gérer la soumission:
+================================================================================
+handleSubmit(onSubmit)
+  // onSubmit ne s'appelle que si le formulaire est valide
+  // Reçoit les données validées
+
+EXEMPLE:
+const onSubmit = (data) => {
+  console.log("Données valides:", data);
+  // Envoyer au serveur
+};
+
+<form onSubmit={handleSubmit(onSubmit)}>
+  ...
+</form>
+
+WATCH - Observer les valeurs:
+================================================================================
+const valueOfField = watch("nomDuChamp");   // Observer un seul champ
+const allValues = watch();                  // Observer tous les champs
+
+EXEMPLE - Afficher les valeurs en temps réel:
+const email = watch("email");
+<p>Email saisi: {email}</p>
+
+formState - État du formulaire:
+================================================================================
+errors              - Les erreurs de validation
+isSubmitting        - Si le formulaire est en cours de soumission
+isDirty             - Si les données ont changé
+isValid             - Si le formulaire est valide
+isLoading           - Si en attente
+
+EXEMPLE:
+<button disabled={!isValid}> Soumettre </button>
+
+getValue - Récupérer une valeur:
+================================================================================
+const data = getValue("nomDuChamp");
+const allData = getValue();
+
+getValues - Récupérer toutes les valeurs (synchrone):
+================================================================================
+const { email, name } = getValues();
+
+reset - Réinitialiser le formulaire:
+================================================================================
+reset();                              // Réinitialiser à defaultValues
+reset({ email: "", name: "" });      // Réinitialiser avec nouvelles valeurs
+
+================================================================================
+                    3. EXEMPLE COMPLET - CHAMP LIÉN À ZOD
+================================================================================
+
+FICHIER: validationSchema.js
+================================================================================
+import { z } from "zod";
+
+export const reservationSchema = z.object({
+  name: z.string()
+    .min(2, "Le nom doit avoir au moins 2 caractères")
+    .max(50, "Trop long"),
+  
+  email: z.string()
+    .email("Email invalide"),
+  
+  phone: z.string()
+    .regex(/^\d{10}$/, "Le téléphone doit avoir 10 chiffres"),
+  
+  date: z.string()
+    .refine(
+      (date) => new Date(date) > new Date(),
+      "La date doit être dans le futur"
+    ),
+  
+  guests: z.number()
+    .int()
+    .min(1, "Au moins 1 personne")
+    .max(10, "Maximum 10 personnes"),
+  
+  specialRequests: z.string().optional(),
+  
+  agreeTerms: z.boolean()
+    .refine((val) => val === true, "Acceptez les conditions")
+});
+
+FICHIER: ReservationForm.jsx
+================================================================================
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { reservationSchema } from "./validationSchema";
+
+export default function ReservationForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    watch,
+    reset
+  } = useForm({
+    resolver: zodResolver(reservationSchema),
+    mode: "onChange"
+  });
+
+  // Observer les valeurs en temps réel
+  const guests = watch("guests");
+
+  // Fonction appelée lors de la soumission SI le formulaire est valide
+  const onSubmit = async (data) => {
+    console.log("Données validées:", data);
+    
+    try {
+      // Envoyer au serveur
+      const response = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      
+      if (response.ok) {
+        alert("Réservation confirmée!");
+        reset();  // Réinitialiser le formulaire
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      
+      {/* CHAMP 1: NAME */}
+      <div className="form-group">
+        <label htmlFor="name">Nom:</label>
+        <input
+          id="name"
+          type="text"
+          placeholder="Votre nom"
+          {...register("name")}
+          className={errors.name ? "error" : ""}
+        />
+        {errors.name && (
+          <span className="error-message">{errors.name.message}</span>
+        )}
+      </div>
+
+      {/* CHAMP 2: EMAIL */}
+      <div className="form-group">
+        <label htmlFor="email">Email:</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="votre@email.com"
+          {...register("email")}
+          className={errors.email ? "error" : ""}
+        />
+        {errors.email && (
+          <span className="error-message">{errors.email.message}</span>
+        )}
+      </div>
+
+      {/* CHAMP 3: PHONE */}
+      <div className="form-group">
+        <label htmlFor="phone">Téléphone:</label>
+        <input
+          id="phone"
+          type="tel"
+          placeholder="0123456789"
+          {...register("phone")}
+          className={errors.phone ? "error" : ""}
+        />
+        {errors.phone && (
+          <span className="error-message">{errors.phone.message}</span>
+        )}
+      </div>
+
+      {/* CHAMP 4: DATE */}
+      <div className="form-group">
+        <label htmlFor="date">Date de réservation:</label>
+        <input
+          id="date"
+          type="date"
+          {...register("date")}
+          className={errors.date ? "error" : ""}
+        />
+        {errors.date && (
+          <span className="error-message">{errors.date.message}</span>
+        )}
+      </div>
+
+      {/* CHAMP 5: GUESTS (Nombre) */}
+      <div className="form-group">
+        <label htmlFor="guests">Nombre de personnes:</label>
+        <input
+          id="guests"
+          type="number"
+          {...register("guests", { valueAsNumber: true })}
+          // valueAsNumber: true convertit la chaîne en nombre
+          className={errors.guests ? "error" : ""}
+        />
+        {guests > 0 && <p>Vous avez sélectionné {guests} personne(s).</p>}
+        {errors.guests && (
+          <span className="error-message">{errors.guests.message}</span>
+        )}
+      </div>
+
+      {/* CHAMP 6: SPECIAL REQUESTS (Optionnel) */}
+      <div className="form-group">
+        <label htmlFor="specialRequests">Demandes spéciales (optionnel):</label>
+        <textarea
+          id="specialRequests"
+          placeholder="Allergies, préférences, etc..."
+          {...register("specialRequests")}
+        />
+        {errors.specialRequests && (
+          <span className="error-message">{errors.specialRequests.message}</span>
+        )}
+      </div>
+
+      {/* CHAMP 7: CHECKBOX */}
+      <div className="form-group">
+        <label htmlFor="agreeTerms">
+          <input
+            id="agreeTerms"
+            type="checkbox"
+            {...register("agreeTerms")}
+          />
+          J'accepte les conditions d'utilisation
+        </label>
+        {errors.agreeTerms && (
+          <span className="error-message">{errors.agreeTerms.message}</span>
+        )}
+      </div>
+
+      {/* BOUTON DE SOUMISSION */}
+      <button type="submit" disabled={!isValid}>
+        Réserver
+      </button>
+    </form>
+  );
+}
+
+================================================================================
+                    4. CAS SPÉCIAUX - CONVERSIONS DE TYPES
+================================================================================
+
+CONVERTIR EN NOMBRE:
+================================================================================
+<input
+  type="number"
+  {...register("age", { valueAsNumber: true })}
+/>
+
+// Sans valueAsNumber, la valeur serait une chaîne "25"
+// Avec, c'est un nombre 25
+
+CONVERTIR EN BOOLÉEN (CHECKBOX):
+================================================================================
+<input
+  type="checkbox"
+  {...register("agree")}
+/>
+
+// Les checkboxes retournent true/false automatiquement
+
+CONVERTIR EN DATE:
+================================================================================
+<input
+  type="date"
+  {...register("birthDate", { valueAsDate: true })}
+/>
+
+// Retourne un objet Date, pas une chaîne
+
+================================================================================
+                    5. EXÉCUTION - ORDRE D'APPEL
+================================================================================
+
+1. L'utilisateur remplit le formulaire
+2. Les validations Zod s'exécutent (via :mode: "onChange" ou onSubmit)
+3. Si valide → les erreurs restent vides
+4. Si invalide → les erreurs s'affichent
+5. L'utilisateur soumet le formulaire
+6. onSubmit(handleSubmit()) se déclenche
+7. Si le formulaire est valide → onSubmit reçoit les DONNÉES VALIDÉES
+8. Si invalide → onSubmit ne s'exécute PAS
+
+================================================================================
+                    6. RÉSUMÉ - BON PATTERN D'UTILISATION
+================================================================================
+
+✓ Créer le schéma Zod dans un fichier séparé (validationSchema.js)
+✓ Importer useForm et zodResolver
+✓ Initialiser useForm avec le schéma
+✓ Utiliser {...register("nomDuChamp")} sur chaque input
+✓ Afficher les erreurs avec errors.nomDuChamp?.message
+✓ Créer onSubmit qui reçoit les données validées
+✓ Passer onSubmit à handleSubmit(onSubmit)
+✓ Attacher handleSubmit(onSubmit) à onSubmit du formulaire
+
+================================================================================

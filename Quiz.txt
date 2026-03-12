@@ -1,0 +1,180 @@
+===========================================================
+         EXPLICATION DU MODULE QUIZ
+===========================================================
+
+STRUCTURE DES FICHIERS
+-----------------------
+src/
+├── service/
+│   └── quiz.js               → Appels API (axios)
+├── Quiz/
+│   ├── Quizzes.jsx            → Liste de tous les quizzes
+│   ├── Quiz.jsx               → Carte d'un quiz (affichage + delete + update)
+│   ├── QuizForm.jsx           → Formulaire d'ajout d'un quiz
+│   └── QuizUpdate.jsx         → Formulaire de modification d'un quiz
+└── api/
+    └── db.json                → Données JSON (collection "quizzes" ajoutée)
+
+MODÈLE DE DONNÉES (db.json)
+-----------------------------
+Un quiz a la forme suivante :
+{
+  "id": "1",
+  "title": "Quiz sur React",
+  "description": "Testez vos connaissances sur React",
+  "questions": [
+    { "question": "Qu'est-ce que React ?", "answer": "Une bibliothèque JavaScript" },
+    { "question": "Qu'est-ce qu'un composant ?", "answer": "Un bloc réutilisable" }
+  ]
+}
+
+La propriété "questions" est une LISTE d'objets { question, answer }.
+
+===========================================================
+1. src/service/quiz.js
+===========================================================
+
+Contient 4 fonctions axios qui correspondent aux 4 opérations CRUD :
+
+  getAllQuizzes(id?)  → GET  /quizzes  ou  /quizzes/:id
+  addQuiz(quiz)       → POST /quizzes
+  editQuiz(id, quiz)  → PATCH /quizzes/:id
+  deleteQuiz(id)      → DELETE /quizzes/:id
+
+Toutes les fonctions sont async/await et exportées séparément.
+
+===========================================================
+2. src/Quiz/Quizzes.jsx  —  Composant liste
+===========================================================
+
+Rôle : Afficher la liste de tous les quizzes récupérés depuis l'API.
+
+État local :
+  - quizzes : tableau des quizzes (initialisé vide)
+
+useEffect :
+  - S'exécute une seule fois au montage (tableau de dépendances vide [])
+  - Appelle getAllQuizzes() et stocke le résultat dans quizzes
+
+Rendu :
+  - Un bouton "Ajouter un Quiz" qui navigue vers /quizzes/add
+  - Une Row Bootstrap qui mappe chaque quiz en composant <Quiz />
+
+===========================================================
+3. src/Quiz/Quiz.jsx  —  Composant carte
+===========================================================
+
+Rôle : Afficher les détails d'un seul quiz avec les actions possibles.
+
+Props reçues :
+  - quiz : l'objet quiz complet (title, description, questions)
+
+État local :
+  - showQuestions : booléen pour afficher/masquer la liste des questions
+
+Fonctionnalités :
+  - Badge Bootstrap affichant le nombre de questions
+  - Bouton "Voir les questions" / "Masquer les questions" (toggle)
+  - Affichage de chaque question + réponse dans un ListGroup Bootstrap
+  - Bouton "Modifier" → navigate vers /quizzes/update/:id
+  - Bouton "Supprimer" → appel deleteQuiz(id) puis window.location.reload()
+
+===========================================================
+4. src/Quiz/QuizForm.jsx  —  Formulaire d'ajout
+===========================================================
+
+Rôle : Permettre la création d'un nouveau quiz avec ses questions.
+
+Hooks utilisés :
+  - useForm() de react-hook-form → gestion du formulaire
+  - useFieldArray() de react-hook-form → gestion de la liste dynamique de questions
+  - useState() → message de succès
+  - useNavigate() → redirection après soumission
+
+useForm :
+  Configuré avec des defaultValues :
+    { title: "", description: "", questions: [{ question: "", answer: "" }] }
+  Pas de zod : la validation est faite directement dans les options de register()
+    { required: "message d'erreur" }
+
+useFieldArray :
+  - Reçoit { control, name: "questions" }
+  - Retourne :
+      fields  → tableau des questions actuelles (chaque item a un id unique)
+      append  → ajoute une question à la fin du tableau
+      remove  → supprime la question à l'index donné
+
+Rendu du formulaire :
+  - Champ "Titre" (texte)
+  - Champ "Description" (textarea)
+  - Section "Questions" : boucle sur fields.map(...)
+      Pour chaque question : affiche un bloc avec
+        - Champ "Question" enregistré comme questions.${index}.question
+        - Champ "Réponse"   enregistré comme questions.${index}.answer
+        - Bouton "Supprimer" (caché si une seule question reste)
+  - Bouton "+ Ajouter une question" → appelle append({ question: "", answer: "" })
+  - Bouton "Valider" (submit) + Bouton "Annuler"
+
+onSubmit :
+  - Construit l'objet quiz avec title, description et questions[]
+  - Appelle addQuiz(quiz)
+  - Affiche un message de succès et redirige vers /quizzes après 2 secondes
+
+SYNTAXE CLÉ — champs imbriqués avec useFieldArray :
+  {...register(`questions.${index}.question`, { required: "..." })}
+
+  React Hook Form utilise le chemin "questions.0.question", "questions.1.question"
+  etc. pour mapper chaque input au bon index du tableau.
+
+  errors.questions?.[index]?.question?.message
+  → accès sécurisé à l'erreur d'un champ imbriqué.
+
+===========================================================
+5. src/Quiz/QuizUpdate.jsx  —  Formulaire de modification
+===========================================================
+
+Rôle : Charger un quiz existant et permettre sa modification.
+
+Identique à QuizForm, avec deux différences importantes :
+
+1. useParams() :
+   - Récupère l'id depuis l'URL (/quizzes/update/:id)
+
+2. useEffect() :
+   - Appelle getAllQuizzes(id) pour récupérer le quiz existant
+   - Appelle reset(response.data) pour pré-remplir le formulaire
+     IMPORTANT : reset() de react-hook-form remplace toutes les valeurs
+     du formulaire, y compris le tableau questions[], ce qui déclenche
+     automatiquement useFieldArray pour afficher les bonnes questions.
+
+3. onSubmit() :
+   - Appelle editQuiz(id, quiz) au lieu de addQuiz(quiz)
+
+===========================================================
+ROUTES AJOUTÉES (src/routes.jsx)
+===========================================================
+
+  /quizzes               → <Quizzes />      (liste lazy-loaded)
+  /quizzes/add           → <QuizForm />     (ajout)
+  /quizzes/update/:id    → <QuizUpdate />   (modification)
+
+===========================================================
+NAVIGATION (src/components/NavigationBar.jsx)
+===========================================================
+
+Deux liens ajoutés dans la barre :
+  - "Quizzes"       → /quizzes
+  - "Add New Quiz"  → /quizzes/add
+
+===========================================================
+DIFFÉRENCE CLEF AVEC PROPERTIES
+===========================================================
+
+Properties                         Quiz
+-----------------------------------  -----------------------------------
+Validation avec zod + zodResolver    Validation native react-hook-form
+Champs simples (title, address, …)   + Liste dynamique de questions
+Pas de useFieldArray                 useFieldArray pour gérer questions[]
+Pas de toggle d'affichage           Bouton show/hide questions dans Quiz.jsx
+
+===========================================================
